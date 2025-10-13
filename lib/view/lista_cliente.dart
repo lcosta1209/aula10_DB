@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/cliente_viewmodel.dart';
-import '../model/cliente.dart';
 import 'cadastro_cliente_page.dart';
 
 // Tela que exibe a lista e o campo de pesquisa (View)
+// NÃO importa Model - usa apenas DTO do ViewModel
 class ListaClientesPage extends StatefulWidget {
   const ListaClientesPage({super.key});
 
@@ -77,10 +77,11 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
                 : ListView.builder(
                     itemCount: vm.clientes.length,
                     itemBuilder: (context, index) {
-                      final Cliente c = vm.clientes[index];
+                      // Usa DTO ao invés de Model
+                      final ClienteDTO dto = vm.clientes[index];
                       return ListTile(
-                        title: Text(c.nome),
-                        subtitle: Text('CPF: ${c.cpf} · ${c.cidadeNascimento}'),
+                        title: Text(dto.nome),
+                        subtitle: Text(dto.subtitulo), // Dado formatado pelo ViewModel
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -88,12 +89,12 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
                             IconButton(
                               icon: const Icon(Icons.edit),
                               onPressed: () async {
-                                // Navega para edição passando o cliente
+                                // Navega para edição passando o DTO
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) =>
-                                        CadastroClientePage(cliente: c),
+                                        CadastroClientePage(clienteDTO: dto),
                                   ),
                                 );
                                 // Recarrega a lista
@@ -105,7 +106,7 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () async {
                                 // Chama o ViewModel para excluir e atualiza a lista
-                                await vm.removerCliente(c.codigo!);
+                                await vm.removerCliente(dto.codigo!);
                               },
                             ),
                           ],

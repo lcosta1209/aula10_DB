@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../model/cliente.dart';
 import '../viewmodel/cliente_viewmodel.dart';
 
 // Tela de cadastro/edição (View)
+// NÃO importa Model - usa apenas DTO do ViewModel
 class CadastroClientePage extends StatefulWidget {
-  // Recebe um cliente opcional: se for null => criação; senão => edição
-  final Cliente? cliente;
-  const CadastroClientePage({super.key, this.cliente});
+  // Recebe um DTO opcional: se for null => criação; senão => edição
+  final ClienteDTO? clienteDTO;
+  const CadastroClientePage({super.key, this.clienteDTO});
 
   @override
   State<CadastroClientePage> createState() => _CadastroClientePageState();
@@ -27,17 +27,17 @@ class _CadastroClientePageState extends State<CadastroClientePage> {
   @override
   void initState() {
     super.initState();
-    // Inicializa os controllers com os valores do cliente (se existir) ou vazios
-    _cpfController = TextEditingController(text: widget.cliente?.cpf ?? '');
-    _nomeController = TextEditingController(text: widget.cliente?.nome ?? '');
+    // Inicializa os controllers com os valores do DTO (se existir) ou vazios
+    _cpfController = TextEditingController(text: widget.clienteDTO?.cpf ?? '');
+    _nomeController = TextEditingController(text: widget.clienteDTO?.nome ?? '');
     _idadeController = TextEditingController(
-      text: widget.cliente?.idade.toString() ?? '',
+      text: widget.clienteDTO?.idade ?? '',
     );
     _dataNascimentoController = TextEditingController(
-      text: widget.cliente?.dataNascimento ?? '',
+      text: widget.clienteDTO?.dataNascimento ?? '',
     );
     _cidadeController = TextEditingController(
-      text: widget.cliente?.cidadeNascimento ?? '',
+      text: widget.clienteDTO?.cidadeNascimento ?? '',
     );
   }
 
@@ -57,25 +57,29 @@ class _CadastroClientePageState extends State<CadastroClientePage> {
     // Valida o formulário
     if (!_formKey.currentState!.validate()) return;
 
-    // Constrói o objeto Cliente a partir dos campos
-    final cliente = Cliente(
-      codigo: widget.cliente?.codigo, // manter código ao editar
-      cpf: _cpfController.text.trim(),
-      nome: _nomeController.text.trim(),
-      idade: int.tryParse(_idadeController.text.trim()) ?? 0,
-      dataNascimento: _dataNascimentoController.text.trim(),
-      cidadeNascimento: _cidadeController.text.trim(),
-    );
-
     // Obtém o ViewModel (não escuta mudanças aqui)
     final vm = Provider.of<ClienteViewModel>(context, listen: false);
 
-    if (widget.cliente == null) {
+    // Passa dados primitivos para o ViewModel (NÃO cria objetos Model aqui)
+    if (widget.clienteDTO == null) {
       // Novo cliente
-      await vm.adicionarCliente(cliente);
+      await vm.adicionarCliente(
+        cpf: _cpfController.text.trim(),
+        nome: _nomeController.text.trim(),
+        idade: _idadeController.text.trim(),
+        dataNascimento: _dataNascimentoController.text.trim(),
+        cidadeNascimento: _cidadeController.text.trim(),
+      );
     } else {
       // Atualiza cliente existente
-      await vm.editarCliente(cliente);
+      await vm.editarCliente(
+        codigo: widget.clienteDTO!.codigo!,
+        cpf: _cpfController.text.trim(),
+        nome: _nomeController.text.trim(),
+        idade: _idadeController.text.trim(),
+        dataNascimento: _dataNascimentoController.text.trim(),
+        cidadeNascimento: _cidadeController.text.trim(),
+      );
     }
 
     // Volta para a tela anterior
@@ -86,7 +90,7 @@ class _CadastroClientePageState extends State<CadastroClientePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.cliente == null ? 'Novo Cliente' : 'Editar Cliente'),
+        title: Text(widget.clienteDTO == null ? 'Novo Cliente' : 'Editar Cliente'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

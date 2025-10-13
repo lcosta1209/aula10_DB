@@ -1,21 +1,23 @@
-import 'package:exdb/model/cliente.dart';
-
 import '../model/cliente.dart';
 import '../db/db_helper.dart';
 
-// Repositório que abstrai as operações CRUD no banco (camada de dados)
-class ClienteRepository {
-  // Pega a instância do DatabaseHelper
+abstract class IClienteRepository {
+  Future<int> inserir(Cliente cliente);
+  Future<int> atualizar(Cliente cliente);
+  Future<int> excluir(int codigo);
+  Future<List<Cliente>> buscar({String filtro = ''});
+}
+
+class ClienteRepository implements IClienteRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  // Insere um cliente e retorna o id gerado
+  @override
   Future<int> inserir(Cliente cliente) async {
     final db = await _dbHelper.database;
-    // Insert automágico: se cliente.codigo for null, SQLite gera o AUTOINCREMENT
     return await db.insert('clientes', cliente.toMap());
   }
 
-  // Atualiza um cliente existente
+  @override
   Future<int> atualizar(Cliente cliente) async {
     final db = await _dbHelper.database;
     return await db.update(
@@ -26,7 +28,7 @@ class ClienteRepository {
     );
   }
 
-  // Exclui um cliente pelo código
+  @override
   Future<int> excluir(int codigo) async {
     final db = await _dbHelper.database;
     return await db.delete(
@@ -36,11 +38,9 @@ class ClienteRepository {
     );
   }
 
-  // Busca clientes, opcionalmente filtrando por nome (LIKE)
+  @override
   Future<List<Cliente>> buscar({String filtro = ''}) async {
     final db = await _dbHelper.database;
-
-    // Se filtro vazio, traz todos ordenados por nome
     final List<Map<String, dynamic>> maps = filtro.isEmpty
         ? await db.query('clientes', orderBy: 'nome')
         : await db.query(
@@ -49,8 +49,6 @@ class ClienteRepository {
             whereArgs: ['%$filtro%'],
             orderBy: 'nome',
           );
-
-    // Converte List<Map> em List<Cliente>
     return maps.map((m) => Cliente.fromMap(m)).toList();
   }
 }
