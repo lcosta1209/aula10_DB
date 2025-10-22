@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "706913486829",
+    "project_id": "aula10-db",
+    "storage_bucket": "aula10-db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:706913486829:android:07ee159499b81faf1109e4",
+        "android_client_info": {
+          "package_name": "com.example.exdb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArIix3cwAO269UmGrEV6OC9Nhz7TQC8nk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
