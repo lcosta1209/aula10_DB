@@ -1,25 +1,37 @@
-import 'package:exdb/view/lista_cliente.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'view/lista_cliente.dart';
 import 'viewmodel/cliente_viewmodel.dart';
 import 'repository/cliente_repository.dart';
+import 'repository/cliente_repository_firebase.dart';
 import 'db/db_helper.dart';
+import 'utils/persistence_mode.dart';
 
-// Ponto de entrada da aplicação
 Future<void> main() async {
-  // Garante que plugins nativos estejam inicializados antes de usar path_provider/sqflite
   WidgetsFlutterBinding.ensureInitialized();
+  print('Antes do Firebase.initializeApp'); // Debug
+  await Firebase.initializeApp();
+  print('Depois do Firebase.initializeApp'); // Debug
 
-  // (Opcional) Inicializa o banco explicitamente para evitar atrasos na primeira operação
-  await DatabaseHelper.instance.database;
+  final useFirebase = await PersistenceMode.getUseFirebase();
+  print('useFirebase: $useFirebase'); // Debug
 
-  // Executa o app dentro de um Provider que injeta o ViewModel (MVVM)
+  if (!useFirebase) {
+    print('Inicializando SQLite'); // Debug
+    await DatabaseHelper.instance.database;
+    print('SQLite inicializado'); // Debug
+  }
+
   runApp(
     MultiProvider(
       providers: [
-        // Fornece uma instância de ClienteViewModel para toda a árvore de widgets
         ChangeNotifierProvider(
-          create: (_) => ClienteViewModel(ClienteRepository()),
+          create: (_) => ClienteViewModel(
+            useFirebase
+                ? ClienteRepositoryFirebase()
+                : ClienteRepository(),
+          ),
         ),
       ],
       child: const MyApp(),
@@ -27,7 +39,6 @@ Future<void> main() async {
   );
 }
 
-// Widget raiz da aplicação
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

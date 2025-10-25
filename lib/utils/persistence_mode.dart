@@ -5,7 +5,7 @@ class PersistenceMode {
 
   static Future<bool> getUseFirebase() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_key) ?? false; // false = SQLite, true = Firebase
+    return prefs.getBool(_key) ?? true; // false = SQLite, true = Firebase
   }
 
   static Future<void> setUseFirebase(bool value) async {
