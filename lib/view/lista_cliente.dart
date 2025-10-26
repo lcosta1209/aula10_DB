@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/cliente_viewmodel.dart';
 import 'cadastro_cliente_page.dart';
+import '../db/persistencia_helper.dart';
+import '../viewmodel/cliente_dto.dart';
 
-// Tela que exibe a lista e o campo de pesquisa (View)
-// NÃO importa Model - usa apenas DTO do ViewModel
+
 class ListaClientesPage extends StatefulWidget {
   const ListaClientesPage({super.key});
 
@@ -13,14 +14,7 @@ class ListaClientesPage extends StatefulWidget {
 }
 
 class _ListaClientesPageState extends State<ListaClientesPage> {
-  // Controller do campo de pesquisa
   final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    // Opcional: poderia carregar aqui, mas o ViewModel já carrega na construção
-  }
 
   @override
   void dispose() {
@@ -30,23 +24,38 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Obtém o ViewModel via Provider
     final vm = Provider.of<ClienteViewModel>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Clientes (MVVM + SQLite)'),
+        title: const Text('Clientes (MVVM + SQLite/Firebase)'),
         actions: [
-          // Botão para criar novo cliente
+          // Alternar entre Firebase e SQLite
+          IconButton(
+            icon: const Icon(Icons.sync_alt),
+            onPressed: () async {
+              final usaFirebase = await PersistenciaHelper.getUsaFirebase();
+              await PersistenciaHelper.setUsaFirebase(!usaFirebase);
+
+              final novoModo = !usaFirebase ? 'Firebase' : 'SQLite';
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Modo alterado para $novoModo')),
+                );
+              }
+
+              // Recarrega a lista com o novo modo
+              await vm.loadClientes();
+            },
+          ),
+          // Adicionar cliente
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () async {
-              // Navega para a tela de cadastro sem passar cliente (novo)
               await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => CadastroClientePage()),
+                MaterialPageRoute(builder: (_) => const CadastroClientePage()),
               );
-              // Ao voltar, recarrega a lista com o filtro atual
               await vm.loadClientes(_searchController.text);
             },
           ),
@@ -54,7 +63,6 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
       ),
       body: Column(
         children: [
-          // Campo de pesquisa por nome
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
@@ -65,47 +73,40 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) async {
-                // Chama o ViewModel para atualizar a lista com o filtro
                 await vm.loadClientes(value);
               },
             ),
           ),
-          // Lista observando o ViewModel (neste caso, Provider reconstrói o widget)
           Expanded(
             child: vm.clientes.isEmpty
                 ? const Center(child: Text('Nenhum cliente encontrado'))
                 : ListView.builder(
                     itemCount: vm.clientes.length,
                     itemBuilder: (context, index) {
-                      // Usa DTO ao invés de Model
-                      final ClienteDTO dto = vm.clientes[index];
+                      final dto = vm.clientes[index];
                       return ListTile(
                         title: Text(dto.nome),
-                        subtitle: Text(dto.subtitulo), // Dado formatado pelo ViewModel
+                        subtitle: Text(dto.subtitulo),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Botão editar
                             IconButton(
                               icon: const Icon(Icons.edit),
                               onPressed: () async {
-                                // Navega para edição passando o DTO
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        CadastroClientePage(clienteDTO: dto),
+                                    builder: (_) => CadastroClientePage(
+                                      clienteDTO: dto,
+                                    ),
                                   ),
                                 );
-                                // Recarrega a lista
                                 await vm.loadClientes(_searchController.text);
                               },
                             ),
-                            // Botão excluir
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () async {
-                                // Chama o ViewModel para excluir e atualiza a lista
                                 await vm.removerCliente(dto.codigo!);
                               },
                             ),

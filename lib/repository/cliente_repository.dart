@@ -1,54 +1,95 @@
-import '../model/cliente.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../db/db_helper.dart';
+import '../db/persistencia_helper.dart';
+import '../model/cliente.dart';
 
-abstract class IClienteRepository {
-  Future<int> inserir(Cliente cliente);
-  Future<int> atualizar(Cliente cliente);
-  Future<int> excluir(int codigo);
-  Future<List<Cliente>> buscar({String filtro = ''});
-}
+class ClienteRepository {
+  final _firestore = FirebaseFirestore.instance;
+  final _table = 'clientes';
 
-class ClienteRepository implements IClienteRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
-
-  @override
-  Future<int> inserir(Cliente cliente) async {
-    final db = await _dbHelper.database;
-    return await db.insert('clientes', cliente.toMap());
-  }
-
-  @override
-  Future<int> atualizar(Cliente cliente) async {
-    final db = await _dbHelper.database;
-    return await db.update(
-      'clientes',
-      cliente.toMap(),
-      where: 'codigo = ?',
-      whereArgs: [cliente.codigo],
-    );
-  }
-
-  @override
-  Future<int> excluir(int codigo) async {
-    final db = await _dbHelper.database;
-    return await db.delete(
-      'clientes',
-      where: 'codigo = ?',
-      whereArgs: [codigo],
-    );
-  }
-
-  @override
+  // 🔍 Buscar todos (com filtro opcional)
   Future<List<Cliente>> buscar({String filtro = ''}) async {
-    final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = filtro.isEmpty
-        ? await db.query('clientes', orderBy: 'nome')
-        : await db.query(
-            'clientes',
-            where: 'nome LIKE ?',
-            whereArgs: ['%$filtro%'],
-            orderBy: 'nome',
-          );
-    return maps.map((m) => Cliente.fromMap(m)).toList();
+    final usaFirebase = await PersistenciaHelper.getUsaFirebase();
+
+    if (usaFirebase) {
+      final query = await _firestore
+          .collection(_table)
+          .where('nome', isGreaterThanOrEqualTo: filtro)
+          .get();
+      return query.docs.map((d) => Cliente.fromMap(d.data())).toList();
+    } else {
+      final db = await DatabaseHelper.instance.database;
+      final maps = await db.query(
+        _table,
+        where: filtro.isNotEmpty ? 'nome LIKE ?' : null,
+        whereArgs: filtro.isNotEmpty ? ['%$filtro%'] : null,
+      );
+      return maps.map((m) => Cliente.fromMap(m)).toList();
+    }
+  }
+
+  // ➕ Inserir
+  Future<void> inserir(Cliente cliente) async {
+    final usaFirebase = await PersistenciaHelper.getUsaFirebase();
+
+    if (usaFirebase) {
+      await _firestore.collection(_table).add(cliente.toMap());
+    } else {
+      final db = await DatabaseHelper.instance.database;
+      await db.insert(_table, cliente.toMap());
+    }
+  }
+
+  // ✏️ Atualizar
+  Future<void> atualizar(Cliente cliente) async {
+    final usaFirebase = await PersistenciaHelper.getUsaFirebase();
+
+    if (usaFirebase) {
+      // Aqui poderíamos usar o CPF como ID, ou buscar o doc correspondente
+      final query = await _firestore
+          .collection(_table)
+          .where('cpf', isEqualTo: cliente.cpf)
+          .get();
+
+      if (query.docs.isNotEmpty) {
+        await _firestore
+            .collection(_table)
+            .doc(query.docs.first.id)
+            .update(cliente.toMap());
+      }
+    } else {
+      final db = await DatabaseHelper.instance.database;
+      await db.update(
+        _table,
+        cliente.toMap(),
+        where: 'codigo = ?',
+        whereArgs: [cliente.codigo],
+      );
+    }
+  }
+
+  // ❌ Excluir
+  Future<void> excluir(int codigo) async {
+    final usaFirebase = await PersistenciaHelper.getUsaFirebase();
+
+    if (usaFirebase) {
+      // Se quiser excluir pelo CPF, precisa ajustar aqui
+      // Aqui estou excluindo pelo campo "codigo" se existir
+      final query = await _firestore
+          .collection(_table)
+          .where('codigo', isEqualTo: codigo)
+          .get();
+
+      if (query.docs.isNotEmpty) {
+        await _firestore.collection(_table).doc(query.docs.first.id).delete();
+      }
+    } else {
+      final db = await DatabaseHelper.instance.database;
+      await db.delete(
+        _table,
+        where: 'codigo = ?',
+        whereArgs: [codigo],
+      );
+    }
   }
 }
