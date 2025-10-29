@@ -7,7 +7,6 @@ class ClienteRepository {
   final _firestore = FirebaseFirestore.instance;
   final _table = 'clientes';
 
-  // 🔍 Buscar todos (com filtro opcional)
   Future<List<Cliente>> buscar({String filtro = ''}) async {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
@@ -28,7 +27,6 @@ class ClienteRepository {
     }
   }
 
-  // ➕ Inserir
   Future<void> inserir(Cliente cliente) async {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
@@ -40,12 +38,10 @@ class ClienteRepository {
     }
   }
 
-  // ✏️ Atualizar
   Future<void> atualizar(Cliente cliente) async {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
     if (usaFirebase) {
-      // Aqui poderíamos usar o CPF como ID, ou buscar o doc correspondente
       final query = await _firestore
           .collection(_table)
           .where('cpf', isEqualTo: cliente.cpf)
@@ -68,13 +64,10 @@ class ClienteRepository {
     }
   }
 
-  // ❌ Excluir
   Future<void> excluir(int codigo) async {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
     if (usaFirebase) {
-      // Se quiser excluir pelo CPF, precisa ajustar aqui
-      // Aqui estou excluindo pelo campo "codigo" se existir
       final query = await _firestore
           .collection(_table)
           .where('codigo', isEqualTo: codigo)

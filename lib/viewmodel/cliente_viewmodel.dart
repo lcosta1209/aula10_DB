@@ -59,10 +59,8 @@ class ClienteViewModel extends ChangeNotifier {
     loadClientes();
   }
 
-  // 🔹 Helper para saber se usa Firebase
   Future<bool> _useFirebase() async => await PrefsService.getUseFirebase();
 
-  // 🔹 Carregar clientes (Firebase ou SQLite)
   Future<void> loadClientes([String filtro = '']) async {
     _ultimoFiltro = filtro;
 
@@ -71,7 +69,7 @@ class ClienteViewModel extends ChangeNotifier {
       _clientes = snap.docs.map((d) {
         final data = d.data();
         return Cliente(
-          codigo: null, // Firestore usa ID string
+          codigo: null, 
           cpf: data['cpf'] ?? '',
           nome: data['nome'] ?? '',
           idade: data['idade'] ?? 0,
@@ -86,7 +84,6 @@ class ClienteViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 🔹 Inserir cliente
   Future<void> adicionarCliente({
     required String cpf,
     required String nome,
@@ -117,7 +114,6 @@ class ClienteViewModel extends ChangeNotifier {
     await loadClientes(_ultimoFiltro);
   }
 
-  // 🔹 Editar cliente
   Future<void> editarCliente({
     required int codigo,
     required String cpf,
@@ -127,7 +123,6 @@ class ClienteViewModel extends ChangeNotifier {
     required String cidadeNascimento,
   }) async {
     if (await _useFirebase()) {
-      // No Firebase não temos "codigo", então você pode usar o CPF como identificador
       final snap = await FirebaseFirestore.instance
           .collection('clientes')
           .where('cpf', isEqualTo: cpf)
@@ -156,7 +151,6 @@ class ClienteViewModel extends ChangeNotifier {
     await loadClientes(_ultimoFiltro);
   }
 
-  // 🔹 Remover cliente
   Future<void> removerCliente(int codigo, [String? cpf]) async {
     if (await _useFirebase()) {
       final snap = await FirebaseFirestore.instance

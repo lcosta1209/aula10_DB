@@ -14,10 +14,10 @@ Future<void> main() async {
 
   if (usaFirebase) {
     await Firebase.initializeApp();
-    print('🔥 Firebase inicializado');
+    print(' Firebase inicializado');
   } else {
     await DatabaseHelper.instance.database;
-    print('💾 SQLite inicializado');
+    print(' SQLite inicializado');
   }
 
   runApp(

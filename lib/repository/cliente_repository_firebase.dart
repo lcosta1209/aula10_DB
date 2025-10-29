@@ -40,7 +40,6 @@ class ClienteRepository {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
     if (usaFirebase) {
-      // Simples: exclui todos com o mesmo código (se existir campo "codigo" no Firebase)
       final snapshot = await _firestore
           .collection('clientes')
           .where('codigo', isEqualTo: codigo)

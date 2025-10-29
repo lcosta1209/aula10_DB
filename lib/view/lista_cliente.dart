@@ -30,7 +30,6 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
       appBar: AppBar(
         title: const Text('Clientes (MVVM + SQLite/Firebase)'),
         actions: [
-          // Alternar entre Firebase e SQLite
           IconButton(
             icon: const Icon(Icons.sync_alt),
             onPressed: () async {
@@ -44,11 +43,9 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
                 );
               }
 
-              // Recarrega a lista com o novo modo
               await vm.loadClientes();
             },
           ),
-          // Adicionar cliente
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () async {

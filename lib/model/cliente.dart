@@ -1,24 +1,16 @@
-// Classe que representa o modelo de dados 'Cliente'.
 class Cliente {
-  // A propriedade 'codigo' é a chave primária (autoincrement)
-  int? codigo; // pode ser null ao criar um novo cliente
+  int? codigo; 
 
-  // CPF do cliente (string para manter zeros à esquerda, separadores, etc.)
   String cpf;
 
-  // Nome do cliente
   String nome;
 
-  // Idade do cliente (inteiro)
   int idade;
 
-  // Data de nascimento em formato String (poderia ser DateTime, aqui usamos String para simplicidade)
   String dataNascimento;
 
-  // Cidade de nascimento
   String cidadeNascimento;
 
-  // Construtor com campos obrigatórios (exceto codigo)
   Cliente({
     this.codigo,
     required this.cpf,
@@ -28,10 +20,9 @@ class Cliente {
     required this.cidadeNascimento,
   });
 
-  // Converte o objeto Cliente em Map<String, dynamic> para inserir/atualizar no SQLite
   Map<String, dynamic> toMap() {
     return {
-      'codigo': codigo, // pode ser null (SQLite atribuirá autoincrement)
+      'codigo': codigo, 
       'cpf': cpf,
       'nome': nome,
       'idade': idade,
@@ -40,7 +31,6 @@ class Cliente {
     };
   }
 
-  // Cria um objeto Cliente a partir de um Map (resultado de uma query no SQLite)
   factory Cliente.fromMap(Map<String, dynamic> map) {
     return Cliente(
       codigo: map['codigo'],
