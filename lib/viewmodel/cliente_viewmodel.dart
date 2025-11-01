@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../db/prefs_service.dart';
 import '../model/cliente.dart';
 import '../repository/cliente_repository.dart';
 
@@ -59,27 +57,13 @@ class ClienteViewModel extends ChangeNotifier {
     loadClientes();
   }
 
-  Future<bool> _useFirebase() async => await PrefsService.getUseFirebase();
+  // Delegate all persistence operations to the repository; the repository
+  // itself decides between SQLite and Firebase using PersistenciaHelper.
 
   Future<void> loadClientes([String filtro = '']) async {
     _ultimoFiltro = filtro;
 
-    if (await _useFirebase()) {
-      final snap = await FirebaseFirestore.instance.collection('clientes').get();
-      _clientes = snap.docs.map((d) {
-        final data = d.data();
-        return Cliente(
-          codigo: null, 
-          cpf: data['cpf'] ?? '',
-          nome: data['nome'] ?? '',
-          idade: data['idade'] ?? 0,
-          dataNascimento: data['dataNascimento'] ?? '',
-          cidadeNascimento: data['cidadeNascimento'] ?? '',
-        );
-      }).toList();
-    } else {
-      _clientes = await _repository.buscar(filtro: filtro);
-    }
+    _clientes = await _repository.buscar(filtro: filtro);
 
     notifyListeners();
   }
@@ -99,17 +83,7 @@ class ClienteViewModel extends ChangeNotifier {
       cidadeNascimento: cidadeNascimento,
     );
 
-    if (await _useFirebase()) {
-      await FirebaseFirestore.instance.collection('clientes').add({
-        'cpf': cpf,
-        'nome': nome,
-        'idade': int.tryParse(idade) ?? 0,
-        'dataNascimento': dataNascimento,
-        'cidadeNascimento': cidadeNascimento,
-      });
-    } else {
-      await _repository.inserir(cliente);
-    }
+    await _repository.inserir(cliente);
 
     await loadClientes(_ultimoFiltro);
   }
@@ -122,48 +96,21 @@ class ClienteViewModel extends ChangeNotifier {
     required String dataNascimento,
     required String cidadeNascimento,
   }) async {
-    if (await _useFirebase()) {
-      final snap = await FirebaseFirestore.instance
-          .collection('clientes')
-          .where('cpf', isEqualTo: cpf)
-          .get();
-
-      for (var doc in snap.docs) {
-        await doc.reference.update({
-          'nome': nome,
-          'idade': int.tryParse(idade) ?? 0,
-          'dataNascimento': dataNascimento,
-          'cidadeNascimento': cidadeNascimento,
-        });
-      }
-    } else {
-      final cliente = Cliente(
-        codigo: codigo,
-        cpf: cpf,
-        nome: nome,
-        idade: int.tryParse(idade) ?? 0,
-        dataNascimento: dataNascimento,
-        cidadeNascimento: cidadeNascimento,
-      );
-      await _repository.atualizar(cliente);
-    }
+    final cliente = Cliente(
+      codigo: codigo,
+      cpf: cpf,
+      nome: nome,
+      idade: int.tryParse(idade) ?? 0,
+      dataNascimento: dataNascimento,
+      cidadeNascimento: cidadeNascimento,
+    );
+    await _repository.atualizar(cliente);
 
     await loadClientes(_ultimoFiltro);
   }
 
-  Future<void> removerCliente(int codigo, [String? cpf]) async {
-    if (await _useFirebase()) {
-      final snap = await FirebaseFirestore.instance
-          .collection('clientes')
-          .where('cpf', isEqualTo: cpf)
-          .get();
-
-      for (var doc in snap.docs) {
-        await doc.reference.delete();
-      }
-    } else {
-      await _repository.excluir(codigo);
-    }
+  Future<void> removerCliente({int? codigo, String? cpf}) async {
+    await _repository.excluir(codigo: codigo, cpf: cpf);
 
     await loadClientes(_ultimoFiltro);
   }

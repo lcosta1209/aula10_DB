@@ -4,14 +4,15 @@ import '../db/persistencia_helper.dart';
 import '../model/cliente.dart';
 
 class ClienteRepository {
-  final _firestore = FirebaseFirestore.instance;
   final _table = 'clientes';
 
   Future<List<Cliente>> buscar({String filtro = ''}) async {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
     if (usaFirebase) {
-      final query = await _firestore
+      // Obtain the Firestore instance lazily only when needed (after Firebase.initializeApp())
+      final firestore = FirebaseFirestore.instance;
+      final query = await firestore
           .collection(_table)
           .where('nome', isGreaterThanOrEqualTo: filtro)
           .get();
@@ -31,7 +32,8 @@ class ClienteRepository {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
     if (usaFirebase) {
-      await _firestore.collection(_table).add(cliente.toMap());
+      final firestore = FirebaseFirestore.instance;
+      await firestore.collection(_table).add(cliente.toMap());
     } else {
       final db = await DatabaseHelper.instance.database;
       await db.insert(_table, cliente.toMap());
@@ -42,13 +44,14 @@ class ClienteRepository {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
     if (usaFirebase) {
-      final query = await _firestore
+      final firestore = FirebaseFirestore.instance;
+      final query = await firestore
           .collection(_table)
           .where('cpf', isEqualTo: cliente.cpf)
           .get();
 
       if (query.docs.isNotEmpty) {
-        await _firestore
+        await firestore
             .collection(_table)
             .doc(query.docs.first.id)
             .update(cliente.toMap());
@@ -64,25 +67,43 @@ class ClienteRepository {
     }
   }
 
-  Future<void> excluir(int codigo) async {
+  /// Exclui um cliente. Para Firebase, prefira passar [cpf] (string) —
+  /// se [cpf] for fornecido, a remoção será feita por CPF. Para SQLite,
+  /// [codigo] é usado como chave primária.
+  Future<void> excluir({int? codigo, String? cpf}) async {
     final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
     if (usaFirebase) {
-      final query = await _firestore
-          .collection(_table)
-          .where('codigo', isEqualTo: codigo)
-          .get();
+      final firestore = FirebaseFirestore.instance;
 
-      if (query.docs.isNotEmpty) {
-        await _firestore.collection(_table).doc(query.docs.first.id).delete();
+      if (cpf != null && cpf.isNotEmpty) {
+        final query = await firestore
+            .collection(_table)
+            .where('cpf', isEqualTo: cpf)
+            .get();
+
+        for (var doc in query.docs) {
+          await firestore.collection(_table).doc(doc.id).delete();
+        }
+      } else if (codigo != null) {
+        final query = await firestore
+            .collection(_table)
+            .where('codigo', isEqualTo: codigo)
+            .get();
+
+        for (var doc in query.docs) {
+          await firestore.collection(_table).doc(doc.id).delete();
+        }
       }
     } else {
       final db = await DatabaseHelper.instance.database;
-      await db.delete(
-        _table,
-        where: 'codigo = ?',
-        whereArgs: [codigo],
-      );
+      if (codigo != null) {
+        await db.delete(
+          _table,
+          where: 'codigo = ?',
+          whereArgs: [codigo],
+        );
+      }
     }
   }
 }

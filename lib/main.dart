@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart'; // <-- importante: agora o arquivo existe!
 import 'package:provider/provider.dart';
 import 'package:exdb/view/lista_cliente.dart';
 import 'package:exdb/viewmodel/cliente_viewmodel.dart';
@@ -13,11 +14,13 @@ Future<void> main() async {
   final usaFirebase = await PersistenciaHelper.getUsaFirebase();
 
   if (usaFirebase) {
-    await Firebase.initializeApp();
-    print(' Firebase inicializado');
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('✅ Firebase inicializado');
   } else {
     await DatabaseHelper.instance.database;
-    print(' SQLite inicializado');
+    debugPrint('💾 SQLite inicializado');
   }
 
   runApp(

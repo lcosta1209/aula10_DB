@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../viewmodel/cliente_viewmodel.dart';
 import 'cadastro_cliente_page.dart';
 import '../db/persistencia_helper.dart';
-import '../viewmodel/cliente_dto.dart';
 
 
 class ListaClientesPage extends StatefulWidget {
@@ -104,7 +103,7 @@ class _ListaClientesPageState extends State<ListaClientesPage> {
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () async {
-                                await vm.removerCliente(dto.codigo!);
+                                await vm.removerCliente(codigo: dto.codigo, cpf: dto.cpf);
                               },
                             ),
                           ],
