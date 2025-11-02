@@ -39,6 +39,8 @@ dependencies:
   # novas dependências para Firebase e Shared Preferences
   firebase_core: ^4.2.0
   cloud_firestore: ^6.0.3
+  firebase_auth: ^6.1.1
+  google_sign_in: ^6.1.0
   shared_preferences: ^2.2.0
 
 
